@@ -77,42 +77,43 @@ New-Item -ItemType Directory -Path "custom-addons", "config", "postgres\data" -F
 ### 2. Создаем docker-compose.yaml
 
 ``` yml
-version: '3'
-services:
-  odoo:
-    image: odoo:17.0
-    env_file: .env
-    depends_on:
-      - postgres
-    ports:
-      - "127.0.0.1:8069:8069"
-    volumes:
-      - ./custom-addons:/mnt/custom-addons
-      - ./config/odoo.conf:/etc/odoo/odoo.conf
+version: '3'                               # Версия синтаксиса docker-compose
 
-  postgres:
-    image: postgres:13
-    env_file: .env
+services:
+  odoo:                                    # Сервис Odoo
+    image: odoo:17.0                       # Используем официальный образ Odoo 17.0
+    env_file: .env                         # Загружаем переменные среды из .env файла
+    depends_on:
+      - postgres                           # Odoo будет ждать запуска PostgreSQL перед стартом
+    ports:
+      - "127.0.0.1:8069:8069"              # Проброс порта: доступ к Odoo по http://localhost:8069
     volumes:
-      - ./postgres/data:/var/lib/postgresql/data
+      - ./custom-addons:/mnt/custom-addons  # Монтируем папку с кастомными модулями
+      - ./config/odoo.conf:/etc/odoo/odoo.conf  # Подключаем собственный конфигурационный файл
+
+  postgres:                                # Сервис базы данных PostgreSQL
+    image: postgres:13                     # Используем официальный образ PostgreSQL 13
+    env_file: .env                         # Загружаем переменные среды из того же .env
+    volumes:
+      - ./postgres/data:/var/lib/postgresql/data  # Монтируем локальный том для хранения данных БД
 ```
 
 ### 3. Создаем .env
 Файл должен находится в корневой директории
 ``` conf
-POSTGRES_DB=postgres
-POSTGRES_USER=odoo
-POSTGRES_PASSWORD=your_secure_password
-PGDATA=/var/lib/postgresql/data
+POSTGRES_DB=postgres               # Название БД (по умолчанию — postgres)
+POSTGRES_USER=odoo                 # Имя пользователя для подключения к БД
+POSTGRES_PASSWORD=your_secure_password   # Пароль для пользователя
+PGDATA=/var/lib/postgresql/data   # Путь, где PostgreSQL будет хранить данные внутри контейнера
 ```
 ### 4. Создаем config/odoo.conf
 Файл должен находится в папке config
 ``` conf
 [options]
-addons_path = /mnt/custom-addons
-db_host = postgres
-db_user = odoo
-db_password = your_secure_password
+addons_path = /mnt/custom-addons      # Путь до папки с пользовательскими модулями внутри контейнера
+db_host = postgres                    # Имя сервиса БД (используется Docker-сеть)
+db_user = odoo                        # Пользователь для подключения к БД (должен совпадать с .env)
+db_password = your_secure_password    # Пароль пользователя (также из .env)
 ```
 ### 5. Запускаем контейнеры
 
